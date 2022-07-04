@@ -66,7 +66,7 @@ By adding these attributes, you will be able pre-filter many queries without the
 
 Putting it all together, we'll be creating a Kusto table like so:
 
-```
+```kusto
 .create table MyCollectionTable (
     ['id']: string,
     ['type']: string
@@ -192,14 +192,14 @@ I'll show some useful queries on our temporal MyCollectionTable table.
 
 To get a sense of what the data looks like, try the following query, which returns 10 objects somewhat randomly:
 
-```
+```kusto
 MyCollectionTable
 | take 10
 ```
 
 You can count the number of rows in Kusto like this:
 
-```
+```kusto
 MyCollectionTable
 | count
 ```
@@ -208,7 +208,7 @@ Keep in mind that the object count above is expected to be higher than the numbe
 
 To query the number of “current”, non-deleted objects in Kusto, use this query:
 
-```
+```kusto
 MyCollectionTable
 | summarize arg_max(timestamp, \*) by id // Keep only the newest version of each object
 | where isActive // Keep only records which aren't deleted
@@ -223,7 +223,7 @@ A nice bonus is that you can now easily query the data in Cosmos DB using KQL, w
 
 The following query counts the number of active objects where the type is 'Company'
 
-```
+```kusto
 MyCollectionTable
 | where type == 'Company'
 | summarize arg_max(timestamp, \*) by id // Keep only the newest version of each object
@@ -233,7 +233,7 @@ MyCollectionTable
 
 Now let's try our first historic query. This query returns the number of companies we had in the Cosmos DB database exactly one day ago:
 
-```
+```kusto
 MyCollectionTable
 | where timestamp \< ago(1d)
 | where type == 'Company'
@@ -246,7 +246,7 @@ As you see we have the same query as before, except we now also filter out all d
 
 Now suppose we want to know which Company object has changed most often:
 
-```
+```kusto
 MyCollectionTable
 | where type == 'Company'
 | summarize n=count() by ['id']
@@ -264,7 +264,7 @@ As you can see, we have a company object that has changed 288 times!
 
 To see all versions of this company object:
 
-```
+```kusto
 MyCollectionTable
 | where id == '6f2a11e5041a9fd34184c8aab4e5718a'
 | sort by timestamp // returns newest version on top
@@ -272,7 +272,7 @@ MyCollectionTable
 
 To see graphically when changes to this object were made:
 
-```
+```kusto
 MyCollectionTable  
 | where id == '6f2a11e5041a9fd34184c8aab4e5718a'  
 | make-series n=count() default=0 on timestamp step 7d  
@@ -285,7 +285,7 @@ As you can see, something happened in March of the previous year that caused mos
 
 Now for something more sophisticated, let's see how many active (i.e., non-deleted) Company objects we had in the Cosmos DB database over time:
 
-```
+```kusto
 MyCollectionTable  
 | where type == 'Company'  
 | sort by id, timestamp asc   
@@ -303,7 +303,7 @@ Until now, we haven't really done anything with the payload yet. With the extrac
 
 For my Cosmos DB schema, the 'createdBy' value can be retrieved from the payload using the Json path '\$.data.createdBy.v'. To retrieve a list of people who created company objects and display the number of company objects each of them created, you can use this query:
 
-```
+```kusto
 MyCollectionTable
 | where type == 'Company'
 | summarize arg_max(timestamp, \*) by id // Keep only the newest version of each object
