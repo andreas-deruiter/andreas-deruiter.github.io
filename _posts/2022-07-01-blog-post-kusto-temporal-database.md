@@ -279,8 +279,6 @@ MyCollectionTable
 | render timechart
 ```
 
-![Graphical user interface, application Description automatically generated](media/5cf212b0f3215673ec7d1f623ae0e1af.png)
-
 As you can see, something happened in March of the previous year that caused most changes to this company object. With the historic records in Kusto we could further investigate in detail what caused this to happen!
 
 Now for something more sophisticated, let's see how many active (i.e., non-deleted) Company objects we had in the Cosmos DB database over time:
@@ -296,8 +294,6 @@ MyCollectionTable
 | summarize max(total) by bin(timestamp, 1d)  
 | render timechart
 ```
-
-![Graphical user interface Description automatically generated](media/bfc2c791d8ec5e3f0a8d74249c93ce96.png)
 
 Until now, we haven't really done anything with the payload yet. With the extract_json and todynamc functions in KQL you can extract data from the Json payload, which in our case is loaded as a string in the data attribute.
 
