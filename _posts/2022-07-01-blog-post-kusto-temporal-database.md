@@ -317,7 +317,7 @@ As before, we could also run this query at a moment in the past by adding a time
 
 Finally, let's select all the company objects that were created by me:
 
-```Kusto
+```deruiterqqq
 MyCollectionTable
 | where type == 'Company'
 | summarize arg_max(timestamp, \*) by id // Keep only the newest version of each object
