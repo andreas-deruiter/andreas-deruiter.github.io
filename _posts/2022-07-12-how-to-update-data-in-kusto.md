@@ -14,7 +14,7 @@ But with a bit of juggling, we can make it work. I will show you how! And as a b
 
 First write a KQL query that returns the rows you wish to have updated or deleted.
 
-```
+```kusto
 MyTable
 | where someAttribute has 'bad data' // rows we wish to update
     or someAttribute has 'remove this' // rows we wish to remove
@@ -23,7 +23,7 @@ MyTable
 Then update the query to return the distinct set of extent IDs for those rows. You will need to call the `extent_id()` for this.  
 So this query returns a list of extents which need to be replaced.
 
-```
+```kusto
 MyTable
 | extend ExtentId = extent_id()
 | where someAttribute has 'bad data' // rows we wish to update
@@ -35,7 +35,7 @@ Double-check that the query returns the data you expect it to before continuing.
 
 Tag the extents to be dropped using the `.alter-merge extent tags` command, in combination with the query from the previous step. In the sample code we use a tag named 'drop_this', but it could be any name. In fact, it is a good idea to make it more specific, for example by adding today's date to the tag name.
 
-```
+```kusto
 .alter-merge extent tags ('drop_this') <|
 MyTable
 | extend ExtentId = extent_id()
@@ -48,7 +48,7 @@ We are doing this because we only want to replace those extents that have 'poiso
 
 Next write a query that returns the corrected rows as they should be, including the good rows for the entire table. Include a filter to remove the rows you want to delete but keeps the rows you do not want to delete (so the condition is inverted compared to before).
 
-```
+```kusto
 MyTable
 | where someAttribute !has 'remove this' // inverted condition
 | extend someAttribute = iif(someAttribute has 'bad data'
@@ -59,7 +59,7 @@ MyTable
 
 Add a filter to the query so that it limits the results to the rows in the extents we tagged before. The query returns the replacement data for the tagged extents.
 
-```
+```kusto
 MyTable
 | where extent_tags() has 'drop_this'
 | where someAttribute !has 'remove this'
@@ -75,7 +75,7 @@ Create a new table with the output of the query using the `.set` command. You ca
 
 One thing you need to consider at this point is what ingestion date/time you want the replacement data to have. This is important when you use a retention policy. The .set command has a `creationTime` option that you can use to back-date the ingestion date (not shown in the example below).
 
-```
+```kusto
 .set MyTableWithReplacementData <|
 MyTable
 | where extent_tags() has 'drop_this'
@@ -88,7 +88,7 @@ MyTable
 
 The `.set `command above is where the heavy lifting happens. The operation might run out of resources and fail. If that happens, you need to divide the data into smaller chunks and do one chunk at a time by adding to the table using `.append`. The following sample code shows how you would do that by splitting the data into two chunks, but this method can be made to work with any number of chunks.
 
-```
+```kusto
 // For the first chunk we use .set to create the table 
 .set MyTableWithReplacementData <|
 MyTable
@@ -114,7 +114,7 @@ MyTable
 
 So far, all we did was just prep-work, nothing changed our main table. Finally, we are ready for the magic to happen. The `replace extents` command accepts two predicates, the first one identifies the list of extents to be dropped, and the second one the list of replacement extents that should be added back into the table.
 
-```
+```kusto
 .replace extents in table MyTable <|
     {
         .show table MyTable extents where tags has 'drop'
