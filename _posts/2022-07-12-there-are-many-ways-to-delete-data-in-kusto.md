@@ -80,19 +80,19 @@ The `.purge` command differs from `.delete` in that it is meant to permanently d
 
 See also: [Data purge - Azure Data Explorer \| Microsoft Docs](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/concepts/data-purge)
 
-Remember that data removal in Kusto really happens at the extent level. This means that when you use `.purge` to remove a couple of rows from a table, Kusto first identifies to which extents they are located. Then it will move all the rows from those extents – except the ones that need to be purged – to a set of new extents. Then it drops the ‘poisoned’ extents and replaces then with the new ones. Finally, it triggers a cleanup of the dropped extents so they will be entirely removed from the Microsoft data center. This last step happens after 5 days at the earliest, and 30 days at latest.
+Remember that data removal in Kusto really happens at the extent level. This means that when you use `.purge` to remove a couple of rows from a table, Kusto first identifies to which extents they are located. Then it will copy all the rows from those extents – except the ones that need to be purged – to a new set of extents. Then it drops the ‘poisoned’ extents and replaces them with the new ones. Finally, it triggers a cleanup of the dropped extents so they will be entirely removed from the Microsoft data center. This last step happens after 5 days at the earliest, and 30 days at latest.
 
-Purging data uses a lot of system resources because large portions of the database will need to be rebuilt. You should expect a significant performance impact and additional usage costs. Microsoft wants you to use this command sparingly.
+Purging data uses a lot of system resources because large portions of the table will need to be rebuilt. You should expect a significant performance impact and additional usage costs. Microsoft advises you to use this command sparingly.
 
-The .purge command does not initially mark the affected rows as deleted, as .delete does. Therefore, queries run immediately after you issue the .purge command can still return those rows.
+The `.purge` command does not initially mark the affected rows as deleted, as `.delete` does. Therefore, queries run immediately after you issue the `.purge` command can still return those rows.
 
 See also: [Data purge - Azure Data Explorer \| Microsoft Docs](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/concepts/data-purge)
 
-The key reason to use this command is when you have user data, and you need to be compliant with privacy laws like GDPR. It uses many system resources, so it negatively affects cost and performance. The fact that the data is permanently removed might eventually result in a lower cost, but if that’s your main objective, you can better rely on other data removal methods.
+The key reason to use this command is when you have user data, and you need to comply with privacy laws like GDPR. It uses many system resources, so it negatively affects cost and performance. The fact that the data is permanently removed might eventually result in a lower cost, but if that’s your main objective, you can better rely on other data removal methods.
 
-# Dropping tables using `.drop table `and` .drop tables`
+# Dropping tables using `.drop table` and `.drop tables`
 
-As its name suggests, you can use `.drop table`(s) to drop entire tables.
+As its name suggests, you can use `.drop table`(s) to remove entire tables.
 
 See also [.drop table and .drop tables - Azure Data Explorer \| Microsoft Docs](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/management/drop-table-command)
 
@@ -120,12 +120,12 @@ You can explicitly drop extents from a table. This essentially means that all th
 
 This command can be useful in several ways:
 
--   You can use it to quickly remove all the data from a table but retain the empty table itself. This appears like what .`clear table` does, although there might be a difference in whether they remove data in the ingestion pipeline.
+-   You can use it to quickly remove all the data from a table but retain the empty table itself. This appears like what .`clear table` does, although there might be a difference in whether they remove data in the ingestion pipeline as well.
 -   You can also use it to get rid of the oldest data in a table by dropping extents by age.
 
 Keep in mind that those dropped extents will continue to exist for a period in the Microsoft data center.
 
-Unlike extents that were dropped as part of .drop table, and which can be recovered using `.undo drop table`, I don’t know of a way to recover dropped extents which were dropped using `.drop extents`. But there’s a work-around for this, as you’ll see in the next section.
+Unlike extents that were dropped as part of `.drop` table, and which can be recovered using `.undo drop table`, I don’t know of a way to recover dropped extents which were dropped using `.drop extents`. But there’s a work-around for this, as you’ll see in the next section.
 
 # How to drop extents and still be able to recover them
 
@@ -135,23 +135,23 @@ Instead of using .`drop extents`, you can do the following:
 
 -   First create a table, with a schema based on the table from which you wish to delete the extents. You can use the `.create table` `based-on` command for this. See [.create table based-on - Azure Data Explorer \| Microsoft Docs](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/management/create-table-based-on-command)
 -   Then, use the `.move extents` command to move the extents you wish to remove from the main table to the one you just created. See [.move extents - Azure Data Explorer \| Microsoft Docs](https://docs.microsoft.com/en-us/azure/data-explorer/kusto/management/move-extents)
--   The use `.drop table` to remove the table with the extents to be removed.
+-   Then use `.drop table` to remove the table with the extents to be removed.
 
 You can later recover that table again using `.undo drop table`, which also brings back the extents.
 
-# Updating and deleting data with `.replace extents `
+# Updating and deleting data with `.replace extents`
 
-One of the first things you learn when using Kusto is: *you can’t update data*. Well, with `.replace extents `you can, and you can also use it to remove data.
+One of the first things you learn when using Kusto is: *you can’t update data*. Well, with `.replace extents` you can, and you can also use it to remove data.
 
 I wrote a separate blog article on this:
 
 [How to update data in Kusto](https://andreas-deruiter.github.io/2022/07/12/how-to-update-data-in-kusto.html)
 
-The possibility to update data in Kusto is exciting, but you can also use this method to remove rows of data, which makes it an alternative to .delete and .purge.
+The ability to update data in Kusto is exciting, but you can also use this method to remove rows of data, which makes it an third way of removing rows of data, next to using `.delete` and `.purge`.
 
-The method is similar to .purge in that the data is not just flagged as deleted, but you remove rows from the extents by rewriting the poisoned extents. Using .replace gives you a bit more control in exchange for a bit more complexity because there are more steps.
+The method is similar to `.purge` in that the data is not just flagged as deleted, but you remove rows from the extents by rewriting the poisoned extents. Using `.replace` gives you a bit more control in exchange for a bit more complexity because there are more steps for you to take.
 
-Unlike .purge, .replace does not control when the dropped data is physically removed in the Microsoft data center.
+Unlike `.purge`, `.replace` does not control when the dropped data is physically removed in the Microsoft data center.
 
 # Physically deleting dropped extents in the Microsoft data center
 
@@ -159,9 +159,9 @@ With the exception of `.purge`, none of the methods discussed so far by themselv
 
 `.purge` is designed to give that guarantee. Kusto, however, also provides another way to influence when the physical data is removed using `.clean databases extentcontainers.`
 
-Like `.purge`, when using `.clean databases extentcontainers` Kusto waits at least 5 days before physically removing the data. Unlike .purge, Microsoft’s documentation doesn’t currently state a maximum number of days it might wait.
+Like `.purge`, when you use `.clean databases extentcontainers` Kusto waits at least 5 days before physically removing the data. Unlike .purge though, Microsoft’s documentation doesn’t currently state a maximum number of days it might wait.
 
-Another difference is that .purge works at the table level, works on an entire database.
+Another difference is that .purge works at the table level, and `.clean databases extentcontainers` works on an entire database.
 
 You can track the progress of a `.clean databases extentcontainers` operation via `.show database <database> extentcontainers clean operations`.` .purge `commands do not show up here. This shows that, while there are similarities between both commands, they appear to be independent from each other.
 
