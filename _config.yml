@@ -20,6 +20,14 @@ github_username: "andreas-deruiter"
 #########################################################################################
 theme: "minima"
 
+kramdown:
+  syntax_highlighter_opts:
+    disable: false
+    block:
+      default_lang: text
+      line_numbers: false
+      start_line: 1
+
 rss: rss
     
 plugins:
