@@ -117,7 +117,7 @@ So far, all we did was just prep-work, nothing changed our main table. Finally, 
 ```kusto
 .replace extents in table MyTable <|
     {
-        .show table MyTable extents where tags has 'drop'
+        .show table MyTable extents where tags has 'drop_this'
     },
     {
         .show tables (MyTableWithReplacementData) extents 
