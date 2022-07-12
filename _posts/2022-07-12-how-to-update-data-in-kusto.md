@@ -1,3 +1,10 @@
+---
+layout: post
+title: "How to update data in Kusto"
+description: "The most efficient way to update and delete rows of data in Kusto"
+date: 2022-07-12
+tags: Kusto update ADX Azure Data Explorer replace extents
+---
 # How to update data in Kusto
 
 One of the first things you learn when using Kusto (a.k.a. Azure Data Explorer a.k.a. ADX) is: you cannot update data. In fact, you *can* update data in Kusto, it's just not as simple as it would be in most database systems. (If you find yourself needing to update data all the time though, then you should consider using another type of database.) 
