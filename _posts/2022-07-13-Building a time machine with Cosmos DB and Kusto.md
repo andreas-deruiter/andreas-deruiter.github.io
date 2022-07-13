@@ -1,39 +1,14 @@
-# Creating a temporal database with help of Kusto
-
+# Building a time machine with Cosmos DB and Kusto
 Kusto, also known as Azure Data Explorer or ADX, is best known for its ability to query and analyze logs. That sounds a bit boring (as does the 'Azure Data Explorer' name), but I found it to be one of those hidden gems that has become one of my favorite Microsoft technologies, right up there with VS Code, Typescript and Excel. Seriously!
 
-The technology powering Kusto is awesome and can be used for more than just analyzing logs. Another application, which I will discuss in this article, is that you can pair Kusto to another database, such as Cosmos DB, and create a temporal database. A temporal database is one which retains historic data, so that you can easily query data as it was at any moment in the past, like having a time machine! This is great when you need the ability to audit or troubleshoot changes to data over time.
-
-In this article I'll explain how you can implement a temporal database with Cosmos DB and Kusto, but you can also use the same approach together with other databases, and even with SaaS applications like Dynamics CRM. 
+The technology powering Kusto is awesome and can be used for more than just analyzing logs. Another application, which I will discuss in this article, is that you can pair Kusto to Cosmos DB and create a temporal database. A temporal database is one which retains historic data, so that you can easily query data as it was at any moment in the past, like having a time machine! This is great when you need the ability to audit or troubleshoot changes to data over time.
 
 We have a lot of ground to cover, and in this article, I'll focus on the high-level concepts.
 
 # *Kusto explained*
-
 If you're already familiar with Kusto, you can skip this part.
 
-Kusto is essentially a cloud-based database in Azure. In that sense, it's like Cosmos DB or Azure SQL Server. Every database system makes certain trade-offs. Kusto is very good at ingesting and querying huge amounts of data, both structured and unstructured. However, it's very bad and updating existing data. In fact, you can't even update existing data at all!
-
-This tradeoff means that Kusto doesn't compete with the traditional SQL or non-SQL databases. Instead, you'd use it in scenarios where you might otherwise use Apache Spark. Just like with Spark, Kusto's ability to handle huge amounts of data largely stems from the fact that the work is spread across many nodes (computers) in the backend. The benefit of Kusto is that you don't need to worry about managing any infrastructure. It's very simple to create and manage a Kusto cluster in the Azure Portal.
-
-A secret sauce in Kusto is the magnificent column store technology which also made it to other Microsoft products, including SQL Server and Power BI. Intuitively, it feels to me as if Kusto from the ground up is built for this technology, whereas in SQL Server half of the time I don't understand why column store indexes don't perform as I would expect.
-
-The result is that you can query large datasets in Kusto, including those based on unstructured or semi-structured data, very fast. In fact, Microsoft also uses Kusto as the backbone for Application Insights and Log Analytics!
-
-## KQL
-
-When I first learned that Kusto has its own query language, instead of SQL, I was quite upset having to learn yet another syntax to do the same kind of thing. After spending a bit of time with KQL though, I have become very fond of it, and found it to be superior to SQL in many ways.
-
-What I like most about KQL is its fluent syntax. In SQL, the WHERE clause needs to come after the SELECT and FROM clause, and before GROUP BY and HAVING. HAVING awkwardly is just another WHERE clause for filtering on aggregated data. KQL on the other hand allows you use any clause at any point in the query. Any clause is simply a transformation that takes what becomes before it and produces an output (like C# LINQ). This makes KQL queries highly composable and you don't need ugly clumsy constructs like CTEs or nested queries to perform a series of transformations.
-
-While SQL was designed by scientists, KQL appears to be designed by engineers. There are lots of practical features that are clearly based on actual experience using it. Just a small example is that in Kusto, when using 'sort by' or 'order by', data is by default sorted in descending order. This may seem counter-intuitive at first, but in Kusto you often find yourself sorting data by time and sorting it in descending order just seems to be the right thing to do 9 out of 10 times.
-
-A minor downside of KQL – perhaps also the result of being designed by engineers – is that language elements don't always follow a consistent naming convention, and some statements exist with multiple names. For example, 'sort by' and 'order by' are the same thing. (One of the two is deprecated, but I always forget which one).
-
-For me, a bonus for learning KQL is that I can also leverage this skill to build powerful Application Insights and Log Analytics queries for my applications, and no longer rely solely on the built-in telemetry charts.
-
 # How to use Kusto as a temporal database, conceptually
-
 By now it should be obvious that Kusto will not replace the existing transactional database in your application, which in this article we'll assume to be a Cosmos DB collection. You'll keep using the transactional database as you did in the past, but whenever a row in the transactional database is inserted or updated, you log the new version of it in the Kusto database. So, while your transactional database always has the latest version of each row, the Kusto database contains all versions of all rows.
 
 Of course, you should keep track of deletions too in Kusto. The way to do this is to maintain an extra row attribute in Kusto called 'isActive' which you set to true upon ingestion when rows are inserted or updated in the source database. When a row is deleted from the source database, you treat this as a new version of the object, with isActive as false.
@@ -41,11 +16,9 @@ Of course, you should keep track of deletions too in Kusto. The way to do this i
 So far, this approach allows you to have a temporal database, provided you start with an empty source database. However, it's more likely you want to implement a temporal database for an existing database. In that case, you should just start by ingesting the existing transactional data to Kusto as inserts, and once that's completed process any further changes and mentioned before. It goes without saying that your historic queries in Kusto can't go back to the time before you started recording changes to Kusto!
 
 # Implementing a temporal database with Cosmos DB
-
 We now know at a high-level how to implement a temporal database with Kusto. Let's take a deeper look at how to specifically implement this with Cosmos DB.
 
 ## Creating a Kusto table to track changes to the Cosmos DB collection
-
 Cosmos DB doesn't explicitly manage schema. Every row in Cosmos DB is just a Json object (albeit with a couple of built-in system attributes like \_ts). Your application manages the schema implicitly through code.
 
 Kusto has a more traditional schema approach, where a database contains tables, and tables have attributes. Luckily string attributes can be up to 1MB in size, so you can store the entire object payload as Json in an attribute called something like 'data'. The benefit of this approach is that it's generic, and you don't need to update the Kusto schema every time your application schema changes.
@@ -78,11 +51,9 @@ Putting it all together, we'll be creating a Kusto table like so:
 (I assume you already have created a Kusto cluster in the Azure Portal. My favorite tool for running queries and commands is the web-based portal at <https://dataexplorer.azure.com/> )
 
 ## Updating the Cosmos DB application
-
 Ideally, we could use Kusto with an existing application and transactional database without needing to make any adjustments to it. There are however a couple of caveats with Cosmos DB which requires us to make some modifications to the Cosmos DB application and its schema first.
 
 ### Update the Cosmos DB application to support soft-delete
-
 What I will describe in this section is a common pattern when using Cosmos DB, so you might already have this in place. In that case, you're in luck!
 
 As I'll explain later, we'll rely on a Cosmos DB feature called “Change Feed” to update our Kusto table whenever anything changes in Cosmos DB. One caveat with Change Feed is that it only triggers when data is created or updated, not when objects are deleted.
@@ -94,17 +65,14 @@ Whenever your application creates an object, `isActive` should be initialized to
 You'll need to update all the queries in your application and add an additional filter so that only objects where `isActive` does not equal False are returned (this is more robust than returning objects where isActive equals True).
 
 ## Implement a timestamp attribute in your Cosmos DB application
-
 When ingesting data to Kusto, it will need to know *when* the data was last modified so it can initialize the timestamp attribute accordingly. To this end, I recommend you add a `timestamp` attribute to your data in Cosmos DB if you don't already have one.
 
 Instead of implementing your own timestamp attribute, however, you could also rely on the \_ts system attribute, which is already part of every Cosmos DB object. The downside of \_ts however is that it has a 1-second granularity, which can be limiting when you later want to use Kusto to analyze what happened during a chain of events that occurred within a short time span.
 
 ### Update the data in your Cosmos database
-
 If you implemented soft-delete and/or a timestamp attribute as mentioned above, you need to run a batch process to update the existing data in Cosmos DB to initialize those attributes. The process should set `isActive` to true for all objects, and you can use the value of \_ts to initialize the timestamp attribute for all the already existing objects.
 
 ## Implement data ingestion of the Cosmos DB collection to Kusto
-
 I mentioned earlier that to use Kusto as a temporal database, you'll first need to ingest the already existing data in Cosmos DB to Kusto, and from then onwards all the objects as they change. The good news is that using Cosmos DB's Change Feed, you can do both at once, and doing it in a very reliable way, while the Cosmos DB application remains online!
 
 Cosmos DB change feed works a bit differently than you might expect and understanding this is important!
@@ -183,7 +151,6 @@ We're running the function as a singleton. This will make it more robust as it e
 Note that we specified StartFromBeginning as true. This means that when we deploy the function, it will first start processing all the existing data in the collection. This is essential as we want to use Kusto as a temporal database.
 
 # Querying the temporal database
-
 Assuming everything is in place and data is being ingested to Kusto, we can start querying it.
 
 My favorite tool for this is the web-based Azure Data Explore site at <https://dataexplorer.azure.com/>. It supports nice editing features, such as context highlighting and auto complete, and it allows you to easily share links to queries.
@@ -326,23 +293,22 @@ MyCollectionTable
 Note that the query pre-filters the data before the line where we call extract_json. By leveraging Kusto's highly efficient full-text search this way, fewer objects need to be parsed by extract_json, thereby speeding up this query.
 
 # Final thoughts
-
 I've used Kusto as a temporal database in projects for several years and having a lens to the past feels like having super-powers. I'll end by mentioning a couple of things that I haven't touched upon yet, but also need careful consideration.
 
-## Compliance with privacy laws and policies
+## Compliance with privacy laws 
+The companies we work with need to comply with privacy laws. Moreover, your customers, business partners and employees deserve their privacy to be respected. Effectually this means that applications and databases need to be able to 'forget' about them after a given period. In some cases, you want to go even further and prevent sensitive data from being ingested into your Kusto in the first place. Having sensitive data in Kusto means that fewer people may access it, which limits its usefulness.
 
-As a business or enterprise, you need to be able to comply with privacy laws. Moreover, your customers, business partners and employees deserve their privacy to be respected. Effectually this means that applications and databases need to be able to 'forget' data after a given period. In some cases, you want to go even further and prevent sensitive data from being ingested into your Kusto in the first place. Having sensitive data in Kusto means that fewer people may access it, which limits its usefulness.
+Kusto supports multiple mechanisms to forget data, including automated retention policies.
 
-Philosophically, Kusto is designed so you can remember as much as possible, and this seems at odds with the privacy requirements of needing to forget. That said, Kusto supports multiple mechanisms to forget data, including automated retention policies.
-
-The problem is that these retention mechanisms don't always play well when using Kusto as a temporal database. Perhaps this is the reason why Microsoft doesn't actively promote using Kusto as a temporal database. There are ways to deal with this though, just keep in mind it's not trivial. (Let me know if you want me to write an article about that).
+The problem is that these retention mechanisms by themselves don't play well when using Kusto as a temporal database. I'll explain how you can address this in another article.
 
 ## Beware of bug fixes that require database updates!
+Temporal tables as described in this post have attributes like timestamp and isActive which are essential for the temporal database queries in Kusto to behave correctly. If we design out Cosmos DB application right, we can assume the code to consistently sets these attributes, so what could go wrong here?
 
-Our Cosmos DB has attributes like timestamp and isActive which are essential for the temporal database queries in Kusto to behave correctly. The Cosmos DB application code consistently sets these attributes, so what could go wrong here?
+That's a good question, glad you asked! 
 
-Let's say a bug is found in the Cosmos DB application which has nothing to do with the attributes Kusto relies on, such as timestamp. The engineering team goes ahead and implements a code fix. So far so good, but sometimes a fix also requires data be updated in the Cosmos DB database. To do that, the engineering team creates a script to update the data directly in the Cosmos DB database, bypassing the code which normally updates attributes like timestamp and isActive.
+Let's say a bug is found in the Cosmos DB application which has nothing to do with the temporal table or Kusto. The application's engineering team goes ahead and implements a code fix. So far so good, but what if this fix requires data be updated in the Cosmos DB database? To do that, the engineering team creates a script to update the data directly in the Cosmos DB database, bypassing the code which normally updates attributes like timestamp and isActive.
 
-Change feed will see those changes and Kusto will be updated accordingly. However, if the developer of the script didn't think of updating timestamp and isActive flags in Cosmos DB, or if the script hard deletes records in the database all together, the temporal queries won't return accurate results anymore. Now we have a lot of work to find the discrepancies and fix the data in Kusto, which is not simple know that Kusto doesn't even have a command equivalent to UPDATE in SQL.
+Change feed will see those changes and Kusto will be updated with the updated records accordingly. However, if the developer of the script didn't think of updating timestamp and isActive flags in Cosmos DB, or if the script hard deletes records in the database all together, the temporal queries will stop to return accurate results. Now we have a lot of work to find the discrepancies and fix the data in Kusto, which is further complicated by the fact that we updating data in Kusto is difficult (see https://andreas-deruiter.github.io/2022/07/12/how-to-update-data-in-kusto.html).
 
 If have seen this happen it the past, especially when the Cosmos DB application developers are not the same people who implemented the Kusto integration.
