@@ -26,7 +26,7 @@ These tradeoff means that Kusto doesn't compete with the traditional SQL or non-
 
 A secret sauce in Kusto is the column store technology which also made it to other Microsoft products, including SQL Server and Power BI. This technology seams ideal for Kusto, given how data never changes.
 
-The trade-offs made in Kusto's design make it ideal for querying logs, the main workload. However, the technology can also be used in other creative ways. One is to use it together with a 'normal' database to create a time machine. I will cover this in more detail in
+The trade-offs made in Kusto's design make it ideal for querying logs, the main workload. However, the technology can also be used in other creative ways. One is to use it together with a 'normal' database to create a time machine. I will cover this in more detail in [Building a time machine with Cosmos DB and Kusto](https://andreas-deruiter.github.io/2022/07/13/Building-a-time-machine-with-Cosmos-DB-and-Kusto.html)
 
 # KQL
 
