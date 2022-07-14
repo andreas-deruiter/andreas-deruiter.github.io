@@ -12,8 +12,7 @@ The technology powering Kusto is awesome and can be used for more than just anal
 
 We have a lot of ground to cover, and in this article, I'll focus on the high-level concepts.
 
-# *Kusto explained*
-If you're already familiar with Kusto, you can skip this part.
+[Quick Kusto intro for software developers](https://andreas-deruiter.github.io/2022/07/13/kusto-for-database-developers.html)
 
 # How to use Kusto as a temporal database, conceptually
 By now it should be obvious that Kusto will not replace the existing transactional database in your application, which in this article we'll assume to be a Cosmos DB collection. You'll keep using the transactional database as you did in the past, but whenever a row in the transactional database is inserted or updated, you log the new version of it in the Kusto database. So, while your transactional database always has the latest version of each row, the Kusto database contains all versions of all rows.
