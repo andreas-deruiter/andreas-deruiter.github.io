@@ -6,13 +6,11 @@ date: 2022-07-13
 tags: Kusto Cosmos DB temporal database time machine Azure Data Explorer ADX
 ---
 # Building a time machine with Cosmos DB and Kusto
-Kusto, also known as Azure Data Explorer or ADX, is best known for its ability to query and analyze logs. That sounds a bit boring (as does the 'Azure Data Explorer' name), but I found it to be one of those hidden gems that has become one of my favorite Microsoft technologies, right up there with VS Code, Typescript and Excel. Seriously!
-
-The technology powering Kusto is awesome and can be used for more than just analyzing logs. Another application, which I will discuss in this article, is that you can pair Kusto to Cosmos DB and create a temporal database. A temporal database is one which retains historic data, so that you can easily query data as it was at any moment in the past, like having a time machine! This is great when you need the ability to audit or troubleshoot changes to data over time.
+Kusto, also known as Azure Data Explorer or ADX, is best known for its ability to query and analyze logs. The technology powering Kusto is awesome and can be used for more than just analyzing logs. Another application, which I will discuss in this article, is that you can pair Kusto to Cosmos DB and create a temporal database. A temporal database is one which retains historic data, so that you can easily query data as it was at any moment in the past, like having a time machine! This is great when you need the ability to audit or troubleshoot changes to data over time.
 
 We have a lot of ground to cover, and in this article, I'll focus on the high-level concepts.
 
-[Quick Kusto intro for software developers](https://andreas-deruiter.github.io/2022/07/13/kusto-for-database-developers.html)
+> In case you're not familiar with Kusto, check out this post: [Quick Kusto intro for software developers](https://andreas-deruiter.github.io/2022/07/13/kusto-for-database-developers.html)
 
 # How to use Kusto as a temporal database, conceptually
 By now it should be obvious that Kusto will not replace the existing transactional database in your application, which in this article we'll assume to be a Cosmos DB collection. You'll keep using the transactional database as you did in the past, but whenever a row in the transactional database is inserted or updated, you log the new version of it in the Kusto database. So, while your transactional database always has the latest version of each row, the Kusto database contains all versions of all rows.
