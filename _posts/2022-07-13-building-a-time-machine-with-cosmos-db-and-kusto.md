@@ -1,3 +1,10 @@
+---
+layout: post
+title: "Building a time machine with Cosmos DB and Kusto"
+description: "This post descibes how you can use Kusto together with a Cosmos DB application to create a temporal database which works like a time machine."
+date: 2022-07-13
+tags: Kusto Cosmos DB temporal database time machine Azure Data Explorer ADX
+---
 # Building a time machine with Cosmos DB and Kusto
 Kusto, also known as Azure Data Explorer or ADX, is best known for its ability to query and analyze logs. That sounds a bit boring (as does the 'Azure Data Explorer' name), but I found it to be one of those hidden gems that has become one of my favorite Microsoft technologies, right up there with VS Code, Typescript and Excel. Seriously!
 

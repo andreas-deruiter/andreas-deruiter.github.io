@@ -1,3 +1,10 @@
+---
+layout: post
+title: "Quick Kusto intro for software developers"
+description: "Explains Kusto from the perspective of a software developer. How it compares to traditional databases, strengths and weaknesses, application areas and architecture"
+date: 2022-07-13
+tags: Kusto explained strengths weaknesses KQL ADX Azure Data Explorer
+---
 # Quick Kusto intro for software developers
 Kusto, also known as Azure Data Explorer or ADX, is best known for its ability to query and analyze logs. That sounds a bit boring (as does the 'Azure Data Explorer' name), but I found it to be one of those hidden gems that has become one of my favorite Microsoft technologies, right up there with VS Code, Typescript and Excel. Seriously!
 
